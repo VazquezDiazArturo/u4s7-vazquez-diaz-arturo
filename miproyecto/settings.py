@@ -119,3 +119,10 @@ STORAGES = {
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = '/admin/login/'
+
+# LOGIN_URL: a dónde manda @login_required si no hay sesión iniciada
+LOGIN_URL = 'login'
+
+# LOGIN_REDIRECT_URL: a dónde redirige tras iniciar sesión correctamente
+LOGIN_REDIRECT_URL = 'servicios'
+

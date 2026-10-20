@@ -1,4 +1,4 @@
-# Proyecto Django — [Tus Nombres y Apellidos]
+# Proyecto Django u4s7 — [Arturo Vazquez Diaz]
 
 ## Demo en vivo (producción)
 https://tu-proyecto.onrender.com

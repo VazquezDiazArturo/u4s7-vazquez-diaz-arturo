@@ -1,9 +1,17 @@
+# render, redirect, get_object_or_404: atajos de Django para responder HTML, redirigir y buscar registros
 from django.shortcuts import render, redirect, get_object_or_404
+# connection: datos de la conexión activa a MySQL
 from django.db import connection
+# login_required: restringe vistas a usuarios autenticados
 from django.contrib.auth.decorators import login_required
+# login, logout: control de sesiones de usuario
 from django.contrib.auth import login, logout
+# Formularios nativos de usuario
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+# messages: notificaciones flash que se muestran una sola vez
 from django.contrib import messages
+# Paginator: divide listas de registros en páginas
+from django.core.paginator import Paginator
 
 from .models import Servicio
 from .forms import ServicioForm
@@ -20,9 +28,23 @@ def inicio(request):
 
 @login_required
 def servicios(request):
-    # Filtra únicamente los registros pertenecientes al usuario en sesión
-    lista_servicios = Servicio.objects.filter(propietario=request.user)
-    return render(request, 'core/servicios.html', {'servicios': lista_servicios})
+    # Filtra por propietario. Si tu modelo no tiene 'creado_en', usa únicamente .order_by('-id')
+    try:
+        lista_servicios = Servicio.objects.filter(propietario=request.user).order_by('-creado_en', '-id')
+    except Exception:
+        lista_servicios = Servicio.objects.filter(propietario=request.user).order_by('-id')
+
+    # Lectura del parámetro de búsqueda ?q=
+    query = request.GET.get('q', '').strip()
+    if query:
+        lista_servicios = lista_servicios.filter(titulo__icontains=query)
+
+    # Paginación fija de 5 registros por página
+    paginator = Paginator(lista_servicios, 5)
+    numero_pagina = request.GET.get('page')
+    pagina = paginator.get_page(numero_pagina)
+
+    return render(request, 'core/servicios.html', {'servicios': pagina, 'query': query})
 
 
 @login_required
@@ -41,7 +63,6 @@ def crear_servicio(request):
 
 @login_required
 def editar_servicio(request, pk):
-    # Si el id no pertenece al usuario actual, responde 404 (evita vulnerabilidad IDOR)
     servicio = get_object_or_404(Servicio, pk=pk, propietario=request.user)
     if request.method == 'POST':
         form = ServicioForm(request.POST, instance=servicio)
@@ -55,7 +76,6 @@ def editar_servicio(request, pk):
 
 @login_required
 def eliminar_servicio(request, pk):
-    # Mismo candado: solo el dueño puede ver y confirmar el borrado
     servicio = get_object_or_404(Servicio, pk=pk, propietario=request.user)
     if request.method == 'POST':
         servicio.delete()
